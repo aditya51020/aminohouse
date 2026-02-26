@@ -10,10 +10,17 @@ console.log('--- Environment Check ---');
 console.log('Available Env Keys:', Object.keys(process.env).filter(k => k.includes('DB') || k.includes('URL') || k.includes('PORT') || k.includes('SECRET')));
 console.log('--- --- --- --- --- ---');
 
-const sequelize = process.env.DATABASE_URL
-    ? (() => {
-        console.log('✅ DATABASE_URL detected. Connecting to Supabase...');
-        return new Sequelize(process.env.DATABASE_URL, {
+const sequelize = (() => {
+    const rawUrl = process.env.DATABASE_URL || process.env.DB_URL;
+
+    if (rawUrl) {
+        const dbUrl = rawUrl.trim();
+        console.log('✅ Database URL detected. Connecting to Remote DB...');
+        // Mask password in logs
+        const masked = dbUrl.replace(/:([^@/]+)@/, ':****@');
+        console.log(`Connection string (masked): ${masked}`);
+
+        return new Sequelize(dbUrl, {
             dialect: 'postgres',
             logging: false,
             dialectOptions: {
@@ -23,36 +30,31 @@ const sequelize = process.env.DATABASE_URL
                 }
             }
         });
-    })()
-    : (() => {
-        console.warn('⚠️ DATABASE_URL NOT FOUND!');
-        const host = process.env.DB_HOST;
-        const user = process.env.DB_USER;
+    }
 
-        if (!host || !user) {
-            console.error('❌ CRITICAL: No database configuration found. Please set DATABASE_URL in Render settings.');
-        }
+    console.warn('⚠️ No Database URL found! Falling back to individual parameters.');
+    const host = process.env.DB_HOST || 'localhost';
+    const user = process.env.DB_USER || 'postgres';
+    console.log(`Attempting connection to Host: ${host} as User: ${user}`);
 
-        console.log(`Attempting connection to Host: ${host || 'localhost'} as User: ${user || 'postgres'}`);
-
-        return new Sequelize(
-            process.env.DB_NAME || 'cafe_db',
-            process.env.DB_USER || 'postgres',
-            process.env.DB_PASS || 'postgres',
-            {
-                host: process.env.DB_HOST || 'localhost',
-                port: process.env.DB_PORT || 5432,
-                dialect: 'postgres',
-                logging: false,
-                dialectOptions: {
-                    ssl: process.env.DB_SSL === 'true' ? {
-                        require: true,
-                        rejectUnauthorized: false
-                    } : false
-                }
+    return new Sequelize(
+        process.env.DB_NAME || 'cafe_db',
+        process.env.DB_USER || 'postgres',
+        process.env.DB_PASS || 'postgres',
+        {
+            host: host,
+            port: process.env.DB_PORT || 5432,
+            dialect: 'postgres',
+            logging: false,
+            dialectOptions: {
+                ssl: process.env.DB_SSL === 'true' ? {
+                    require: true,
+                    rejectUnauthorized: false
+                } : false
             }
-        );
-    })();
+        }
+    );
+})();
 
 const connectDB = async () => {
     try {

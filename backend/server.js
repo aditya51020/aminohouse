@@ -19,6 +19,9 @@ const rateLimit = require('express-rate-limit');
 
 const app = express();
 
+// Required for express-rate-limit on Render/Vercel
+app.set('trust proxy', 1);
+
 // CORS MUST BE FIRST
 const corsOptions = {
     origin: function (origin, callback) {
