@@ -1,20 +1,16 @@
 // backend/server.js
-const express = require('express');
 const dotenv = require('dotenv');
+dotenv.config(); // MUST be first — loads .env before anything uses process.env
+
+const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const compression = require('compression');
+const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
 
 const uploadRoutes = require('./routes/upload');
 const customerRoutes = require('./routes/customerRoutes');
-
-connectDB().then(() => {
-    const { seedDefaultAdmin } = require('./utils/seed');
-    seedDefaultAdmin();
-});
-
-const helmet = require('helmet');
-const compression = require('compression');
-const rateLimit = require('express-rate-limit');
 
 const app = express();
 
@@ -25,22 +21,17 @@ app.set('trust proxy', 1);
 const corsOptions = {
     origin: function (origin, callback) {
         const allowed = [
-            // Local development
             'http://localhost:5173',
             'http://localhost:3000',
             'http://localhost:5000',
-            // Vercel production/preview (all subdomains)
             /\.vercel\.app$/,
-            // Render domains
             /\.onrender\.com$/,
         ];
-        // Allow no-origin (curl, mobile, Postman)
         if (!origin) return callback(null, true);
         const isAllowed = allowed.some(pattern =>
             pattern instanceof RegExp ? pattern.test(origin) : pattern === origin
         );
         if (isAllowed) return callback(null, true);
-        // Also allow custom domain if set in env
         if (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL) {
             return callback(null, true);
         }
@@ -58,14 +49,13 @@ app.use(helmet({
 }));
 app.use(compression());
 
-// Rate Limiting: STRICT for auth routes (50 req/15min per IP)
+// Rate Limiting
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 50,
     message: 'Too many login attempts, please try again later.'
 });
 
-// Rate Limiting: LENIENT for general API (500 req/15min per IP)
 const generalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 500,
@@ -84,7 +74,7 @@ app.use('/api/orders', require('./routes/orderRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/qr', require('./routes/qrRoutes'));
 app.use('/api/upload', uploadRoutes);
-app.use('/uploads', express.static('Uploads')); // Case-sensitive
+app.use('/uploads', express.static('Uploads'));
 app.use('/api/customers', customerRoutes);
 app.use('/api/customer-auth', require('./routes/customerAuthRoutes'));
 app.use('/api/ingredients', require('./routes/ingredientRoutes'));
@@ -94,13 +84,21 @@ app.use('/api/coupons', require('./routes/couponRoutes'));
 app.use('/api/ads', require('./routes/adRoutes'));
 app.use('/api/combos', require('./routes/comboRoutes'));
 
-// 404 catch-all for unmatched routes
+// 404 catch-all
 app.use((req, res) => {
     res.status(404).json({ message: `Route ${req.method} ${req.path} not found` });
 });
 
-// Always listen — works on Render (PORT env) and local dev
+// Start server AFTER DB connects
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+connectDB().then(async () => {
+    const { seedDefaultAdmin } = require('./utils/seed');
+    await seedDefaultAdmin();
+    app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+}).catch(err => {
+    console.error('❌ Failed to connect to DB, server not started:', err.message);
+    process.exit(1);
+});
 
 module.exports = app;
