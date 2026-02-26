@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const seedDefaultAdmin = async () => {
     try {
         const admins = [
+            { username: 'admin1', password: 'admin123' },
             { username: 'admin', password: 'admin123' },
             { username: 'admni1', password: 'admin123' }
         ];
