@@ -45,7 +45,7 @@ const Menu = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState('menu');
-  const [orderType, setOrderType] = useState('dinein');
+  const [orderType, setOrderType] = useState('dine-in');
   const [selectedPayment, setSelectedPayment] = useState('');
   const [showLogin, setShowLogin] = useState(false);
 
@@ -910,23 +910,23 @@ const Menu = () => {
               <div className="grid grid-cols-2 gap-3">
                 {/* Dine In */}
                 <button
-                  onClick={() => setOrderType('dinein')}
-                  className={`relative p-5 rounded-2xl border-2 transition-all text-left ${orderType === 'dinein'
+                  onClick={() => setOrderType('dine-in')}
+                  className={`relative p-5 rounded-2xl border-2 transition-all text-left ${orderType === 'dine-in'
                     ? 'border-black bg-black text-white shadow-lg'
                     : 'border-gray-200 bg-white hover:border-gray-300'
                     }`}
                 >
-                  {orderType === 'dinein' && (
+                  {orderType === 'dine-in' && (
                     <div className="absolute top-2 right-2 w-5 h-5 bg-white rounded-full flex items-center justify-center">
                       <Check className="w-3 h-3 text-black" />
                     </div>
                   )}
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 ${orderType === 'dinein' ? 'bg-white/20' : 'bg-gray-100'
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-3 ${orderType === 'dine-in' ? 'bg-white/20' : 'bg-gray-100'
                     }`}>
-                    <Building2 className={`w-6 h-6 ${orderType === 'dinein' ? 'text-white' : 'text-gray-500'}`} />
+                    <Building2 className={`w-6 h-6 ${orderType === 'dine-in' ? 'text-white' : 'text-gray-500'}`} />
                   </div>
                   <p className="font-bold text-sm">Dine In</p>
-                  <p className={`text-xs mt-0.5 ${orderType === 'dinein' ? 'text-gray-300' : 'text-gray-400'}`}>Eat at the cafe</p>
+                  <p className={`text-xs mt-0.5 ${orderType === 'dine-in' ? 'text-gray-300' : 'text-gray-400'}`}>Eat at the cafe</p>
                 </button>
 
                 {/* Take Away */}
