@@ -75,12 +75,14 @@ const createOrder = async (req, res) => {
           }
         }
       } else {
-        if (source !== 'pos' && menuItem.quantity < item.quantity) {
+        if (source !== 'pos' && menuItem.quantity !== undefined && menuItem.quantity !== null && menuItem.quantity < item.quantity) {
           return res.status(400).json({ message: `${menuItem.name} is out of stock` });
         }
-        menuItem.quantity -= item.quantity;
-        if (menuItem.quantity <= 0) menuItem.inStock = false;
-        await menuItem.save();
+        if (menuItem.quantity !== undefined && menuItem.quantity !== null) {
+          menuItem.quantity -= item.quantity;
+          if (menuItem.quantity <= 0) menuItem.inStock = false;
+          await menuItem.save();
+        }
       }
     }
 
