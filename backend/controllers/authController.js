@@ -27,10 +27,24 @@ const register = async (req, res) => {
 // 2. LOGIN
 const login = async (req, res) => {
   const { username, password } = req.body;
+  console.log(`Login attempt for: ${username}`);
+
   try {
     const user = await User.findOne({ where: { username } });
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    if (!user) {
+      console.log('User not found in database');
       return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      console.log('Password mismatch');
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    if (!process.env.JWT_SECRET) {
+      console.error('CRITICAL: JWT_SECRET is not defined in environment variables');
+      return res.status(500).json({ message: 'Server configuration error: Missing JWT_SECRET' });
     }
 
     // Dynamic Role
@@ -40,9 +54,11 @@ const login = async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    res.json({ token, role: user.role, username: user.username }); // Return role to frontend
+    console.log(`Login successful for user: ${username}, role: ${user.role}`);
+    res.json({ token, role: user.role, username: user.username });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Login Error:', err);
+    res.status(500).json({ message: `Internal Server Error: ${err.message}` });
   }
 };
 

@@ -7,6 +7,7 @@ const generateToken = (id) => jwt.sign({ id, type: 'customer' }, process.env.JWT
 exports.customerLogin = async (req, res) => {
   const { phone } = req.body;
   if (!phone) return res.status(400).json({ message: 'Phone required' });
+  console.log(`Customer login attempt for: ${phone}`);
 
   try {
     const [customer, created] = await Customer.findOrCreate({
@@ -14,10 +15,13 @@ exports.customerLogin = async (req, res) => {
       defaults: { phone }
     });
 
+    if (created) console.log(`New customer record created for: ${phone}`);
+
     const token = generateToken(customer.id);
     res.json({ token, customer: { id: customer.id, phone: customer.phone, name: customer.name, hasProfile: !!customer.name } });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Customer Login Error:', err);
+    res.status(500).json({ message: `Internal Server Error: ${err.message}` });
   }
 };
 
