@@ -7,7 +7,7 @@ exports.getMenu = async (req, res) => {
 
     // Dynamic Stock Calculation
     const menuWithStock = menu.map(item => {
-      const itemObj = item.toObject();
+      const itemObj = item.toObject({ virtuals: true }); // keep virtual id
 
       if (!itemObj.inStock) return itemObj;
 
@@ -29,8 +29,7 @@ exports.getMenu = async (req, res) => {
           itemObj.inStock = false;
           itemObj.stockReason = 'Ingredient out of stock';
         }
-      }
-      else {
+      } else {
         if (itemObj.quantity <= 0) itemObj.inStock = false;
       }
       return itemObj;
@@ -58,17 +57,16 @@ exports.addMenuItem = async (req, res) => {
 };
 
 exports.updateMenuItem = async (req, res) => {
-  const { name, description, price, category, imageUrl, cost } = req.body;
-
   try {
+    const { name, price, category } = req.body;
     if (!name || !price || !category) {
       return res.status(400).json({ message: 'Name, price, and category are required' });
     }
 
     const updatedItem = await Menu.findByIdAndUpdate(
       req.params.id,
-      { name, description, price, category, imageUrl, cost },
-      { new: true }
+      { $set: req.body }, // update ALL fields sent, not just a fixed subset
+      { new: true, runValidators: true }
     );
 
     if (!updatedItem) return res.status(404).json({ message: 'Menu item not found' });

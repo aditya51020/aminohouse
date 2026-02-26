@@ -79,8 +79,11 @@ const Dashboard = () => {
   // Lazy Components (defined outside or memoized if dynamic imports)
   // For now, let's just stick to standard imports but lazy render data.
 
-  // ... useEffects ...
-
+  // === Helpers ===
+  const fetchMenu = async () => {
+    const menuResponse = await adminApi.get('/menu');
+    setMenuItems(menuResponse.data.map(item => ({ ...item, inStock: item.inStock ?? true })));
+  };
 
 
   useEffect(() => {
@@ -229,14 +232,13 @@ const Dashboard = () => {
       };
 
       if (editItemId) {
-        const res = await axios.put(`/menu/${editItemId}`, data);
-        setMenuItems(menuItems.map(i => i.id === editItemId ? res.data : i));
+        await adminApi.put(`/menu/${editItemId}`, data);
         addToast('Item updated!', 'success');
       } else {
-        const res = await axios.post('/menu', data);
-        setMenuItems([...menuItems, res.data]);
+        await adminApi.post('/menu', data);
         addToast('Item added!', 'success');
       }
+      await fetchMenu(); // re-fetch to get fresh data with correct ids
       resetForm();
     } catch (err) {
       addToast('Save failed', 'error');
@@ -283,8 +285,8 @@ const Dashboard = () => {
     if (!window.confirm('Delete this item?')) return;
     try {
       setLoading(true);
-      await axios.delete(`/menu/${id}`);
-      setMenuItems(menuItems.filter(i => i.id !== id));
+      await adminApi.delete(`/menu/${id}`);
+      await fetchMenu(); // re-fetch so state is accurate
     } catch (err) {
       addToast('Delete failed', 'error');
     } finally {
