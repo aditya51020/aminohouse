@@ -104,7 +104,7 @@ const createOrder = async (req, res) => {
       })),
       totalAmount,
       paymentMethod,
-      orderType: orderType || 'dine-in',
+      orderType: orderType ? orderType.toLowerCase() : 'dine-in',
       deliveryDetails: { address, slot },
       discount: { couponCode, amount: discountAmount },
       status: 'Pending',
