@@ -138,7 +138,7 @@ exports.claimDailyMeal = async (req, res) => {
             ],
             totalAmount: 0,
             paymentMethod: 'subscription',
-            orderType: req.body.orderType || 'takeaway',
+            orderType: (req.body.orderType || 'takeaway').toLowerCase(),
             status: 'Accepted',
             statusHistory: [{ status: 'Accepted', timestamp: new Date() }]
         });
