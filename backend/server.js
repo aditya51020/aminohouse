@@ -8,7 +8,10 @@ const uploadRoutes = require('./routes/upload');
 const customerRoutes = require('./routes/customerRoutes');
 
 dotenv.config();
-connectDB(); // PostgreSQL Connected
+connectDB().then(() => {
+    const { seedDefaultAdmin } = require('./utils/seed');
+    seedDefaultAdmin();
+});
 
 const helmet = require('helmet');
 const compression = require('compression');
@@ -26,6 +29,8 @@ const corsOptions = {
             'http://localhost:5000',
             // Vercel production/preview (all subdomains)
             /\.vercel\.app$/,
+            // Render domains
+            /\.onrender\.com$/,
         ];
         // Allow no-origin (curl, mobile, Postman)
         if (!origin) return callback(null, true);

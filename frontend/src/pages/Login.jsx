@@ -24,7 +24,7 @@ const Login = () => {
       localStorage.removeItem('userRole');
       localStorage.removeItem('userName');
 
-      const { data } = await api.post('/auth/login', { username, password });
+      const { data } = await api.post('auth/login', { username, password });
 
       localStorage.setItem('adminToken', data.token);
 
@@ -57,7 +57,7 @@ const Login = () => {
     setLoading(true);
     setMessage('');
     try {
-      await api.post('/auth/forgot-password', { email });
+      await api.post('auth/forgot-password', { email });
       setMessage('OTP sent! Check console (or email in prod)');
       setMode('reset');
     } catch (err) {
@@ -72,7 +72,7 @@ const Login = () => {
     setLoading(true);
     setMessage('');
     try {
-      await api.post('/auth/reset-password', { email, otp, newPassword });
+      await api.post('auth/reset-password', { email, otp, newPassword });
       setMessage('Password reset! Login now.');
       setMode('login');
       setOtp(''); setNewPassword('');
