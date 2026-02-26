@@ -194,7 +194,9 @@ const Dashboard = () => {
     formData.append('image', imageFile);
     try {
       setUploadingImage(true);
-      const res = await axios.post('/upload', formData);
+      const res = await adminApi.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       return res.data.imageUrl;
     } catch (err) {
       alert('Image upload failed');
