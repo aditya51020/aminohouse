@@ -11,9 +11,9 @@ const ComboManager = ({ menuItems }) => {
     const emptyForm = {
         name: '',
         description: '',
-        comboPrice: '',
+        price: '',
         imageUrl: '',
-        isActive: true,
+        active: true,
         selectedItems: [] // [{ menuItemId, name, price, imageUrl }]
     };
     const [form, setForm] = useState(emptyForm);
@@ -31,7 +31,7 @@ const ComboManager = ({ menuItems }) => {
     useEffect(() => { fetchCombos(); }, []);
 
     const originalPrice = form.selectedItems.reduce((sum, i) => sum + Number(i.price || 0), 0);
-    const savings = originalPrice - Number(form.comboPrice || 0);
+    const savings = originalPrice - Number(form.price || 0);
 
     // Toggle item in combo selection
     const toggleItem = (item) => {
@@ -52,7 +52,7 @@ const ComboManager = ({ menuItems }) => {
     };
 
     const handleSave = async () => {
-        if (!form.name || !form.comboPrice || form.selectedItems.length < 2) {
+        if (!form.name || !form.price || form.selectedItems.length < 2) {
             alert('Name, combo price, and at least 2 items are required');
             return;
         }
@@ -61,11 +61,10 @@ const ComboManager = ({ menuItems }) => {
             const payload = {
                 name: form.name,
                 description: form.description,
-                comboPrice: Number(form.comboPrice),
-                originalPrice,
+                price: Number(form.price),
                 imageUrl: form.imageUrl || form.selectedItems[0]?.imageUrl || '',
-                isActive: form.isActive,
-                items: form.selectedItems
+                active: form.active,
+                items: form.selectedItems.map(i => i.menuItemId)
             };
             if (editId) {
                 const res = await adminApi.put(`/combos/${editId}`, payload);
@@ -88,10 +87,15 @@ const ComboManager = ({ menuItems }) => {
         setForm({
             name: combo.name,
             description: combo.description || '',
-            comboPrice: combo.comboPrice,
+            price: combo.price,
             imageUrl: combo.imageUrl || '',
-            isActive: combo.isActive,
-            selectedItems: combo.items || []
+            active: combo.active,
+            selectedItems: (combo.items || []).map(item => ({
+                menuItemId: item._id || item.id,
+                name: item.name,
+                price: item.price,
+                imageUrl: item.imageUrl
+            }))
         });
         setEditId(combo.id);
         setShowForm(true);
@@ -109,7 +113,7 @@ const ComboManager = ({ menuItems }) => {
 
     const handleToggleActive = async (combo) => {
         try {
-            const res = await adminApi.put(`/combos/${combo.id}`, { isActive: !combo.isActive });
+            const res = await adminApi.put(`/combos/${combo.id}`, { active: !combo.active });
             setCombos(c => c.map(x => x.id === combo.id ? res.data : x));
         } catch (err) {
             alert('Update failed');
@@ -159,8 +163,8 @@ const ComboManager = ({ menuItems }) => {
                             <label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Combo Price (₹) *</label>
                             <input
                                 type="number"
-                                value={form.comboPrice}
-                                onChange={e => setForm(f => ({ ...f, comboPrice: e.target.value }))}
+                                value={form.price}
+                                onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
                                 placeholder="e.g. 149"
                                 className="w-full border rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-black"
                             />
@@ -186,7 +190,7 @@ const ComboManager = ({ menuItems }) => {
                             </div>
                             <div>
                                 <p className="text-gray-500 text-xs">Combo Price</p>
-                                <p className="font-bold text-black">₹{form.comboPrice || 0}</p>
+                                <p className="font-bold text-black">₹{form.price || 0}</p>
                             </div>
                             {savings > 0 && (
                                 <div>
@@ -233,12 +237,12 @@ const ComboManager = ({ menuItems }) => {
                     {/* Active toggle */}
                     <div className="flex items-center gap-3">
                         <button
-                            onClick={() => setForm(f => ({ ...f, isActive: !f.isActive }))}
-                            className={`w-12 h-6 rounded-full transition-colors ${form.isActive ? 'bg-green-500' : 'bg-gray-300'}`}
+                            onClick={() => setForm(f => ({ ...f, active: !f.active }))}
+                            className={`w-12 h-6 rounded-full transition-colors ${form.active ? 'bg-green-500' : 'bg-gray-300'}`}
                         >
-                            <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform mx-0.5 ${form.isActive ? 'translate-x-6' : 'translate-x-0'}`} />
+                            <div className={`w-5 h-5 bg-white rounded-full shadow transition-transform mx-0.5 ${form.active ? 'translate-x-6' : 'translate-x-0'}`} />
                         </button>
-                        <span className="text-sm font-medium text-gray-700">{form.isActive ? 'Active (visible on menu)' : 'Inactive (hidden)'}</span>
+                        <span className="text-sm font-medium text-gray-700">{form.active ? 'Active (visible on menu)' : 'Inactive (hidden)'}</span>
                     </div>
 
                     <div className="flex gap-3 pt-2">
@@ -269,7 +273,7 @@ const ComboManager = ({ menuItems }) => {
             ) : (
                 <div className="space-y-3">
                     {combos.map(combo => (
-                        <div key={combo.id} className={`bg-white rounded-2xl border shadow-sm p-4 flex gap-4 items-start ${!combo.isActive ? 'opacity-60' : ''}`}>
+                        <div key={combo.id} className={`bg-white rounded-2xl border shadow-sm p-4 flex gap-4 items-start ${!combo.active ? 'opacity-60' : ''}`}>
                             {combo.imageUrl && (
                                 <img src={combo.imageUrl} alt={combo.name} className="w-20 h-20 rounded-xl object-cover flex-shrink-0" />
                             )}
@@ -282,9 +286,9 @@ const ComboManager = ({ menuItems }) => {
                                     <div className="flex gap-2 flex-shrink-0">
                                         <button
                                             onClick={() => handleToggleActive(combo)}
-                                            className={`px-2 py-1 text-xs font-bold rounded-lg ${combo.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}
+                                            className={`px-2 py-1 text-xs font-bold rounded-lg ${combo.active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}
                                         >
-                                            {combo.isActive ? 'Active' : 'Off'}
+                                            {combo.active ? 'Active' : 'Off'}
                                         </button>
                                         <button onClick={() => handleEdit(combo)} className="p-1.5 bg-gray-100 rounded-lg hover:bg-gray-200">
                                             <Edit2 size={14} className="text-gray-600" />
@@ -306,11 +310,13 @@ const ComboManager = ({ menuItems }) => {
 
                                 {/* Pricing */}
                                 <div className="flex items-center gap-3 mt-3">
-                                    <span className="text-sm line-through text-gray-400">₹{combo.originalPrice}</span>
-                                    <span className="text-lg font-black text-black">₹{combo.comboPrice}</span>
-                                    {combo.originalPrice > combo.comboPrice && (
+                                    <span className="text-sm line-through text-gray-400">₹{
+                                        (combo.items || []).reduce((sum, i) => sum + Number(i.price || 0), 0)
+                                    }</span>
+                                    <span className="text-lg font-black text-black">₹{combo.price}</span>
+                                    {(combo.items || []).reduce((sum, i) => sum + Number(i.price || 0), 0) > combo.price && (
                                         <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-bold rounded-full">
-                                            Save ₹{combo.originalPrice - combo.comboPrice}
+                                            Save ₹{(combo.items || []).reduce((sum, i) => sum + Number(i.price || 0), 0) - combo.price}
                                         </span>
                                     )}
                                 </div>

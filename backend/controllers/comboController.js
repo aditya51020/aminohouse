@@ -5,7 +5,7 @@ const getCombos = async (req, res) => {
     try {
         const all = req.query.all === 'true';
         const filter = all ? {} : { active: true }; // fixed field name to 'active'
-        const combos = await Combo.find(filter).sort({ createdAt: -1 });
+        const combos = await Combo.find(filter).sort({ createdAt: -1 }).populate('items');
         res.json(combos);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -22,6 +22,7 @@ const createCombo = async (req, res) => {
         const combo = await Combo.create({
             name, description, price, imageUrl, active, items
         });
+        await combo.populate('items');
         res.status(201).json(combo);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -31,7 +32,7 @@ const createCombo = async (req, res) => {
 // UPDATE combo (admin)
 const updateCombo = async (req, res) => {
     try {
-        const combo = await Combo.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const combo = await Combo.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate('items');
         if (!combo) return res.status(404).json({ message: 'Combo not found' });
         res.json(combo);
     } catch (err) {
