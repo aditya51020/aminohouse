@@ -1097,64 +1097,66 @@ const Menu = () => {
             </div>
           </div>
 
-          {/* Address Details */}
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-            <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-gray-500" />
-              Delivery Location
-            </h3>
+          {/* Address Details - Only show for delivery */}
+          {orderType === 'delivery' && (
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+              <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-gray-500" />
+                Delivery Location
+              </h3>
 
-            <div className="space-y-4">
-              <div className="relative">
-                <textarea
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  rows={3}
-                  placeholder="Flat / House No / Floor, Building Name..."
-                  className="w-full p-4 bg-gray-50 border-gray-200 border rounded-xl focus:bg-white focus:border-black focus:ring-1 focus:ring-black outline-none transition-all font-medium resize-none placeholder-gray-400"
-                />
-              </div>
-
-              {/* Address Type Chips */}
-              <div>
-                <label className="text-xs font-bold text-gray-400 uppercase ml-1 mb-2 block">Save address as</label>
-                <div className="flex gap-3">
-                  {[
-                    { type: 'Home', icon: Home },
-                    { type: 'Work', icon: Briefcase },
-                    { type: 'Other', icon: MapPin }
-                  ].map(({ type, icon: Icon }) => (
-                    <button
-                      key={type}
-                      onClick={() => setAddressType(type)}
-                      className={`flex-1 py-2.5 px-2 rounded-xl flex items-center justify-center gap-2 border transition-all ${addressType === type
-                        ? 'bg-black text-white border-black shadow-md'
-                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                        }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      <span className="text-sm font-bold">{type}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Delivery Instructions */}
-              <div>
-                <label className="text-xs font-bold text-gray-400 uppercase ml-1 mb-1 block">Instructions (Optional)</label>
+              <div className="space-y-4">
                 <div className="relative">
-                  <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="text"
-                    value={deliveryInstructions}
-                    onChange={(e) => setDeliveryInstructions(e.target.value)}
-                    placeholder="e.g. Leave at door, Do not ring bell"
-                    className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-gray-200 border rounded-xl focus:bg-white focus:border-black focus:ring-1 focus:ring-black outline-none transition-all font-medium placeholder-gray-400"
+                  <textarea
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    rows={3}
+                    placeholder="Flat / House No / Floor, Building Name..."
+                    className="w-full p-4 bg-gray-50 border-gray-200 border rounded-xl focus:bg-white focus:border-black focus:ring-1 focus:ring-black outline-none transition-all font-medium resize-none placeholder-gray-400"
                   />
+                </div>
+
+                {/* Address Type Chips */}
+                <div>
+                  <label className="text-xs font-bold text-gray-400 uppercase ml-1 mb-2 block">Save address as</label>
+                  <div className="flex gap-3">
+                    {[
+                      { type: 'Home', icon: Home },
+                      { type: 'Work', icon: Briefcase },
+                      { type: 'Other', icon: MapPin }
+                    ].map(({ type, icon: Icon }) => (
+                      <button
+                        key={type}
+                        onClick={() => setAddressType(type)}
+                        className={`flex-1 py-2.5 px-2 rounded-xl flex items-center justify-center gap-2 border transition-all ${addressType === type
+                          ? 'bg-black text-white border-black shadow-md'
+                          : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                          }`}
+                      >
+                        <Icon className="w-4 h-4" />
+                        <span className="text-sm font-bold">{type}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Delivery Instructions */}
+                <div>
+                  <label className="text-xs font-bold text-gray-400 uppercase ml-1 mb-1 block">Instructions (Optional)</label>
+                  <div className="relative">
+                    <FileText className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      value={deliveryInstructions}
+                      onChange={(e) => setDeliveryInstructions(e.target.value)}
+                      placeholder="e.g. Leave at door, Do not ring bell"
+                      className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border-gray-200 border rounded-xl focus:bg-white focus:border-black focus:ring-1 focus:ring-black outline-none transition-all font-medium placeholder-gray-400"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Footer Action */}
@@ -1162,8 +1164,12 @@ const Menu = () => {
           <div className="max-w-lg mx-auto">
             <button
               onClick={() => {
-                if (!customerName || !customerPhone || !address) {
-                  addToast('Please fill in your name, phone, and address', 'error');
+                if (!customerName || !customerPhone) {
+                  addToast('Please fill in your name and phone number', 'error');
+                  return;
+                }
+                if (orderType === 'delivery' && !address) {
+                  addToast('Please fill in your delivery address', 'error');
                   return;
                 }
                 if (customerPhone.length < 10) {
