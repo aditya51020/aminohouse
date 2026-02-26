@@ -40,7 +40,10 @@ const KitchenDisplay = ({ orders, onUpdateStatus }) => {
                             {colOrders.map(order => (
                                 <div key={order._id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow animate-scale-in">
                                     <div className="flex justify-between items-start mb-3">
-                                        <span className="font-bold text-gray-900">#{order._id.slice(-4)}</span>
+                                        <div>
+                                            <span className="font-bold text-gray-900 block">#{order._id.slice(-4)}</span>
+                                            <span className="text-xs text-gray-500">{order.customer?.name || order.guestDetails?.name || 'Guest'}</span>
+                                        </div>
                                         <span className={`text-xs font-bold px-2 py-1 rounded bg-${col.color}-50 text-${col.color}-700 flex items-center gap-1`}>
                                             <Clock size={12} /> {getElapsedTime(order.createdAt)}
                                         </span>

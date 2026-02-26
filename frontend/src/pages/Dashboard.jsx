@@ -676,7 +676,7 @@ const Dashboard = () => {
                           {' '}for ₹{order.totalAmount}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {order.customer?.name || 'Guest'} via {order.paymentMethod} • {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {(order.customer?.name || order.guestDetails?.name || 'Guest')} via {order.paymentMethod} • {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>
                     </div>
@@ -724,10 +724,10 @@ const Dashboard = () => {
                               {/* Customer Info */}
                               <div className="mt-1 mb-2">
                                 <p className="text-sm font-semibold text-gray-800">
-                                  {order.customer?.name || 'Guest'}
+                                  {order.customer?.name || order.guestDetails?.name || 'Guest'}
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                  {order.customer?.phone || 'No Phone'}
+                                  {order.customer?.phone || order.guestDetails?.phone || 'No Phone'}
                                 </p>
                                 {order.orderType === 'delivery' && order.address && (
                                   <p className="text-xs text-gray-500 italic mt-0.5">
