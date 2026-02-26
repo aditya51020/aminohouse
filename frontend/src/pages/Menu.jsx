@@ -312,7 +312,7 @@ const Menu = () => {
 
       await api.post('/orders', {
         items: cart.map(i => ({
-          menuItem: i.id,
+          menuItem: i._id || i.id,
           quantity: i.quantity,
           customizations: i.customizations,
           price: i.totalPrice
