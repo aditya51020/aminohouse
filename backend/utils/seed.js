@@ -9,9 +9,9 @@ const seedDefaultAdmin = async () => {
         ];
 
         for (const account of admins) {
-            const existing = await User.findOne({ where: { username: account.username } });
+            const hashedPassword = await bcrypt.hash(account.password, 10);
+            const existing = await User.findOne({ username: account.username });
             if (!existing) {
-                const hashedPassword = await bcrypt.hash(account.password, 10);
                 await User.create({
                     username: account.username,
                     password: hashedPassword,
@@ -19,7 +19,11 @@ const seedDefaultAdmin = async () => {
                 });
                 console.log(`✅ Default admin created: ${account.username} / ${account.password}`);
             } else {
-                console.log(`ℹ️ Admin user already exists: ${account.username}`);
+                // Force update password to ensure it's hashed correctly and exists
+                existing.password = hashedPassword;
+                existing.role = 'admin';
+                await existing.save();
+                console.log(`ℹ️ Admin user updated/verified: ${account.username}`);
             }
         }
     } catch (err) {

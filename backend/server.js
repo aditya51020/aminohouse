@@ -2,12 +2,11 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
-const { connectDB } = require('./config/database');
-require('./models/associations'); // Init associations
+const connectDB = require('./config/db');
+
 const uploadRoutes = require('./routes/upload');
 const customerRoutes = require('./routes/customerRoutes');
 
-dotenv.config();
 connectDB().then(() => {
     const { seedDefaultAdmin } = require('./utils/seed');
     seedDefaultAdmin();

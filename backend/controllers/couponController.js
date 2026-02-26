@@ -1,6 +1,5 @@
 const Coupon = require('../models/couponModel');
 const CouponUsage = require('../models/couponUsageModel');
-const { Op } = require('sequelize');
 
 // @desc    Verify coupon
 // @route   POST /api/coupons/verify
@@ -10,10 +9,8 @@ exports.verifyCoupon = async (req, res) => {
         const { code, cartTotal, customerId, cartItems } = req.body;
 
         const coupon = await Coupon.findOne({
-            where: {
-                code: code.toUpperCase(),
-                isActive: true
-            }
+            code: code.toUpperCase(),
+            isActive: true
         });
 
         if (!coupon) {
@@ -32,18 +29,15 @@ exports.verifyCoupon = async (req, res) => {
 
         // 3. Check Usage Limits (Global)
         if (coupon.usageLimit && coupon.usageLimit > 0) {
-            const globalUsage = await CouponUsage.count({ where: { couponId: coupon.id } });
+            const globalUsage = await CouponUsage.countDocuments({ couponId: coupon._id });
             if (globalUsage >= coupon.usageLimit) {
                 return res.status(400).json({ message: 'Coupon usage limit reached' });
             }
         }
 
-        // 4. Check Per User Limit (Assuming 1 for now if not in model, or skip if no limit)
-        // Adjusting based on model which had usageLimit (global) and usedCount. 
-        // Adding check if customerId provided.
+        // 4. Check Per User Limit
         if (customerId) {
-            const userUsage = await CouponUsage.count({ where: { couponId: coupon.id, customerId } });
-            // Default per user limit to 1 if not specified in model
+            const userUsage = await CouponUsage.countDocuments({ couponId: coupon._id, customerId });
             const perUserLimit = coupon.perUserLimit || 1;
             if (userUsage >= perUserLimit) {
                 return res.status(400).json({ message: 'You have already used this coupon' });
@@ -67,7 +61,6 @@ exports.verifyCoupon = async (req, res) => {
             }
         }
 
-        // Ensure discount doesn't exceed total
         discount = Math.min(discount, cartTotal);
 
         res.json({
@@ -75,7 +68,7 @@ exports.verifyCoupon = async (req, res) => {
             discount,
             finalTotal: cartTotal - discount,
             code: coupon.code,
-            couponId: coupon.id
+            couponId: coupon._id
         });
 
     } catch (err) {
@@ -84,13 +77,10 @@ exports.verifyCoupon = async (req, res) => {
 };
 
 // @desc    Create new coupon
-// @route   POST /api/coupons
-// @access  Private (Admin)
 exports.createCoupon = async (req, res) => {
     try {
         const { code, discountType, discountValue, expirationDate, minOrderValue, usageLimit, maxDiscount } = req.body;
 
-        // Basic validation
         if (!code || !discountType || !discountValue) {
             return res.status(400).json({ message: 'Missing required fields' });
         }
@@ -112,11 +102,9 @@ exports.createCoupon = async (req, res) => {
 };
 
 // @desc    Get all coupons
-// @route   GET /api/coupons
-// @access  Private (Admin)
 exports.getCoupons = async (req, res) => {
     try {
-        const coupons = await Coupon.findAll({ order: [['createdAt', 'DESC']] });
+        const coupons = await Coupon.find({}).sort({ createdAt: -1 });
         res.json(coupons);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -124,13 +112,10 @@ exports.getCoupons = async (req, res) => {
 };
 
 // @desc    Delete coupon
-// @route   DELETE /api/coupons/:id
-// @access  Private (Admin)
 exports.deleteCoupon = async (req, res) => {
     try {
-        const coupon = await Coupon.findByPk(req.params.id);
+        const coupon = await Coupon.findByIdAndDelete(req.params.id);
         if (coupon) {
-            await coupon.destroy();
             res.json({ message: 'Coupon deleted' });
         } else {
             res.status(404).json({ message: 'Coupon not found' });

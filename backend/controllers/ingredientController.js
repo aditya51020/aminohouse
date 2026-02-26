@@ -1,80 +1,60 @@
 const Ingredient = require('../models/ingredientModel');
 const Order = require('../models/orderModel');
-const OrderItem = require('../models/OrderItem');
 const Menu = require('../models/menuModel');
-const { Op } = require('sequelize');
 
 exports.getPrepSuggestions = async (req, res) => {
     try {
-        // 1. Analyze last 7 days sales
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-        const orders = await Order.findAll({
-            where: {
-                createdAt: { [Op.gte]: sevenDaysAgo },
-                status: { [Op.ne]: 'Cancelled' }
-            },
-            include: [{
-                model: OrderItem,
-                attributes: ['MenuId', 'quantity']
-            }]
+        const orders = await Order.find({
+            createdAt: { $gte: sevenDaysAgo },
+            status: { $ne: 'Cancelled' }
         });
 
-        // 2. Calculate Avg Qty per Menu Item
         const itemSales = {};
         orders.forEach(order => {
-            if (order.OrderItems) {
-                order.OrderItems.forEach(item => {
-                    const id = item.MenuId;
+            if (order.items) {
+                order.items.forEach(item => {
+                    const id = item.menuItem.toString();
                     itemSales[id] = (itemSales[id] || 0) + item.quantity;
                 });
             }
         });
 
-        const menuItems = await Menu.findAll({
-            include: [{
-                model: Ingredient,
-                through: { attributes: ['quantityRequired'] } // Include junction table data
-            }]
-        });
+        const menuItems = await Menu.find({}).populate('recipe.ingredient');
 
-        // 3. Group by Station
         const suggestions = {};
 
         for (const menuItem of menuItems) {
-            const totalSold7Days = itemSales[menuItem.id] || 0;
+            const totalSold7Days = itemSales[menuItem._id.toString()] || 0;
             const dailyAvg = totalSold7Days / 7;
 
-            // Check if menuItem has ingredients (Sequelize puts them in menuItem.Ingredients)
-            if (dailyAvg > 0 && menuItem.Ingredients && menuItem.Ingredients.length > 0) {
-                const station = menuItem.station || 'Other';
+            if (dailyAvg > 0 && menuItem.recipe && menuItem.recipe.length > 0) {
+                const station = menuItem.category || 'Other';
                 if (!suggestions[station]) suggestions[station] = [];
 
-                // For each ingredient in recipe
-                menuItem.Ingredients.forEach(ing => {
-                    // Access quantity from junction table (RecipeItem)
-                    const qtyRequired = ing.RecipeItem ? ing.RecipeItem.quantityRequired : 0;
-
-                    const needed = qtyRequired * dailyAvg * 1.2; // 20% buffer
-
-                    // Check if ingredient already listed for this station
-                    const existing = suggestions[station].find(i => i.name === ing.name);
-                    if (existing) {
-                        existing.qty += needed;
-                    } else {
-                        suggestions[station].push({
-                            id: ing.id,
-                            name: ing.name,
-                            unit: ing.unit,
-                            qty: needed
-                        });
+                menuItem.recipe.forEach(ri => {
+                    const ing = ri.ingredient;
+                    const qtyRequired = ri.quantityRequired;
+                    if (ing && qtyRequired > 0) {
+                        const needed = qtyRequired * dailyAvg * 1.2;
+                        const existing = suggestions[station].find(i => i.name === ing.name);
+                        if (existing) {
+                            existing.qty += needed;
+                        } else {
+                            suggestions[station].push({
+                                id: ing._id,
+                                name: ing.name,
+                                unit: ing.unit,
+                                qty: needed
+                            });
+                        }
                     }
                 });
             }
         }
 
-        // Round numbers
         Object.keys(suggestions).forEach(station => {
             suggestions[station].forEach(item => {
                 item.qty = Math.ceil(item.qty);
@@ -90,9 +70,7 @@ exports.getPrepSuggestions = async (req, res) => {
 
 exports.getIngredients = async (req, res) => {
     try {
-        const ingredients = await Ingredient.findAll({
-            order: [['name', 'ASC']]
-        });
+        const ingredients = await Ingredient.find({}).sort({ name: 1 });
         res.json(ingredients);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -102,7 +80,7 @@ exports.getIngredients = async (req, res) => {
 exports.createIngredient = async (req, res) => {
     try {
         const { name, unit, currentStock, costPerUnit, lowStockThreshold, manufacturer } = req.body;
-        const ingredient = await Ingredient.create({ name, unit, currentStock, costPerUnit, lowStockThreshold, manufacturer: manufacturer || null });
+        const ingredient = await Ingredient.create({ name, unit, currentStock, costPerUnit, lowStockThreshold, manufacturer });
         res.status(201).json(ingredient);
     } catch (err) {
         res.status(400).json({ message: err.message });
@@ -111,11 +89,8 @@ exports.createIngredient = async (req, res) => {
 
 exports.updateIngredient = async (req, res) => {
     try {
-        const [updated] = await Ingredient.update(req.body, {
-            where: { id: req.params.id }
-        });
-        if (updated) {
-            const ingredient = await Ingredient.findByPk(req.params.id);
+        const ingredient = await Ingredient.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        if (ingredient) {
             res.json(ingredient);
         } else {
             res.status(404).json({ message: 'Ingredient not found' });
@@ -127,9 +102,7 @@ exports.updateIngredient = async (req, res) => {
 
 exports.deleteIngredient = async (req, res) => {
     try {
-        const deleted = await Ingredient.destroy({
-            where: { id: req.params.id }
-        });
+        const deleted = await Ingredient.findByIdAndDelete(req.params.id);
         if (deleted) {
             res.json({ message: 'Deleted successfully' });
         } else {

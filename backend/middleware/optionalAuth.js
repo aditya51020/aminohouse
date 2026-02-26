@@ -13,9 +13,7 @@ module.exports = async (req, res, next) => {
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret-123');
 
         if (decoded.type === 'customer') {
-            req.user = await Customer.findByPk(decoded.id, {
-                attributes: ['id', 'phone', 'name']
-            });
+            req.user = await Customer.findById(decoded.id).select('phone name');
         }
 
         next();

@@ -10,15 +10,15 @@ exports.customerLogin = async (req, res) => {
   console.log(`Customer login attempt for: ${phone}`);
 
   try {
-    const [customer, created] = await Customer.findOrCreate({
-      where: { phone },
-      defaults: { phone }
-    });
+    // MongoDB Equivalent of findOrCreate
+    let customer = await Customer.findOne({ phone });
+    if (!customer) {
+      customer = await Customer.create({ phone });
+      console.log(`New customer record created for: ${phone}`);
+    }
 
-    if (created) console.log(`New customer record created for: ${phone}`);
-
-    const token = generateToken(customer.id);
-    res.json({ token, customer: { id: customer.id, phone: customer.phone, name: customer.name, hasProfile: !!customer.name } });
+    const token = generateToken(customer._id);
+    res.json({ token, customer: { id: customer._id, phone: customer.phone, name: customer.name, hasProfile: !!customer.name } });
   } catch (err) {
     console.error('Customer Login Error:', err);
     res.status(500).json({ message: `Internal Server Error: ${err.message}` });
@@ -28,14 +28,15 @@ exports.customerLogin = async (req, res) => {
 exports.completeCustomerProfile = async (req, res) => {
   const { name, email } = req.body;
   try {
-    const customer = await Customer.findByPk(req.user.id);
+    const customer = await Customer.findById(req.user.id);
     if (!customer) return res.status(404).json({ message: 'Customer not found' });
 
-    await customer.update({ name, email });
+    customer.name = name;
+    customer.email = email;
+    await customer.save();
 
-    // Refresh fetch for select logic if needed, but instance is updated
     res.json({
-      id: customer.id,
+      id: customer._id,
       name: customer.name,
       phone: customer.phone,
       email: customer.email

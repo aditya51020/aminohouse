@@ -1,43 +1,21 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const mongoose = require('mongoose');
 
-const Combo = sequelize.define('Combo', {
-    id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true
-    },
-    name: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    description: {
-        type: DataTypes.TEXT,
-        allowNull: true
-    },
-    comboPrice: {
-        type: DataTypes.FLOAT,
-        allowNull: false
-    },
-    originalPrice: {
-        type: DataTypes.FLOAT,
-        allowNull: false
-    },
-    imageUrl: {
-        type: DataTypes.STRING,
-        allowNull: true
-    },
-    isActive: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: true
-    },
-    // Array of { menuItemId, name, price, imageUrl }
-    items: {
-        type: DataTypes.JSONB,
-        defaultValue: []
-    }
+const comboSchema = new mongoose.Schema({
+    name: { type: String, required: true },
+    price: { type: Number, required: true },
+    items: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Menu' }],
+    description: { type: String },
+    imageUrl: { type: String },
+    active: { type: Boolean, default: true }
 }, {
-    timestamps: true
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 });
 
-module.exports = Combo;
+// Virtual for id
+comboSchema.virtual('id').get(function () {
+    return this._id.toHexString();
+});
+
+module.exports = mongoose.model('Combo', comboSchema);

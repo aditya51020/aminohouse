@@ -1,27 +1,17 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const mongoose = require('mongoose');
 
-const Setting = sequelize.define('Setting', {
-    id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
-    },
-    key: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        unique: true
-    },
-    value: {
-        type: DataTypes.JSONB, // Using JSONB to store flexible settings
-        allowNull: false
-    },
-    description: {
-        type: DataTypes.STRING,
-        allowNull: true
-    }
+const settingSchema = new mongoose.Schema({
+    key: { type: String, required: true, unique: true },
+    value: { type: mongoose.Schema.Types.Mixed, required: true }
 }, {
-    timestamps: true
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 });
 
-module.exports = Setting;
+// Virtual for id
+settingSchema.virtual('id').get(function () {
+    return this._id.toHexString();
+});
+
+module.exports = mongoose.model('Setting', settingSchema);

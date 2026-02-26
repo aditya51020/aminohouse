@@ -6,18 +6,16 @@ const bcrypt = require('bcryptjs');
 
 // 1. REGISTER
 const register = async (req, res) => {
-  const { username, password, role } = req.body; // Accept role
+  const { username, password, role } = req.body;
   try {
-    const existingUser = await User.findOne({ where: { username } });
+    const existingUser = await User.findOne({ username });
     if (existingUser) return res.status(400).json({ message: 'Username already exists' });
 
     const hashed = await bcrypt.hash(password, 10);
-    // Allow role, default to cashier if not provided
     const userRole = role || 'cashier';
 
     const user = await User.create({ username, password: hashed, role: userRole });
 
-    // Determine status (created)
     res.status(201).json({ message: `User registered as ${userRole}` });
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -30,10 +28,18 @@ const login = async (req, res) => {
   console.log(`Login attempt for: ${username}`);
 
   try {
-    const user = await User.findOne({ where: { username } });
+    const user = await User.findOne({ username }).select('+password');
+    console.log('User found:', !!user);
+    if (user) console.log('Password in record:', !!user.password);
+
     if (!user) {
       console.log('User not found in database');
       return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    if (!user.password) {
+      console.error('Password field missing for user:', username);
+      return res.status(500).json({ message: 'Internal Server Error: Account data corrupted (missing password)' });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -47,9 +53,8 @@ const login = async (req, res) => {
       return res.status(500).json({ message: 'Server configuration error: Missing JWT_SECRET' });
     }
 
-    // Dynamic Role
     const token = jwt.sign(
-      { id: user.id, role: user.role || 'cashier' },
+      { id: user._id, role: user.role || 'cashier' },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
@@ -68,15 +73,15 @@ const updatePassword = async (req, res) => {
   const userId = req.user.id;
 
   try {
-    const user = await User.findByPk(userId);
+    const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch) return res.status(400).json({ message: 'Old password wrong' });
 
     const hashedInfo = await bcrypt.hash(newPassword, 10);
-    // Update user
-    await user.update({ password: hashedInfo });
+    user.password = hashedInfo;
+    await user.save();
 
     res.json({ message: 'Password updated!' });
   } catch (err) {
@@ -84,13 +89,10 @@ const updatePassword = async (req, res) => {
   }
 };
 
-
 // 4. GET USERS (Admin only)
 const getUsers = async (req, res) => {
   try {
-    const users = await User.findAll({
-      attributes: { exclude: ['password'] }
-    });
+    const users = await User.find({}).select('-password');
     res.json(users);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -100,8 +102,8 @@ const getUsers = async (req, res) => {
 // 5. DELETE USER (Admin only)
 const deleteUser = async (req, res) => {
   try {
-    const deleted = await User.destroy({ where: { id: req.params.id } });
-    if (!deleted) return res.status(404).json({ message: 'User not found' });
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
     res.json({ message: 'User deleted' });
   } catch (err) {
     res.status(500).json({ message: err.message });

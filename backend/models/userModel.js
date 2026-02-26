@@ -1,37 +1,20 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const mongoose = require('mongoose');
 
-const User = sequelize.define('User', {
-  id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true
-  },
-  username: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true
-  },
-  password: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  role: {
-    type: DataTypes.STRING,
-    defaultValue: 'cashier' // 'admin', 'kitchen', 'cashier'
-  },
-  // Keeping these just in case, but making them optional if not used by authController
-  name: {
-    type: DataTypes.STRING,
-    allowNull: true
-  },
-  email: {
-    type: DataTypes.STRING,
-    allowNull: true,
-    unique: true
-  }
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true, select: false },
+  role: { type: String, default: 'cashier' }, // 'admin', 'kitchen', 'cashier'
+  name: { type: String },
+  email: { type: String, unique: true, sparse: true }
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
 });
 
-module.exports = User;
+// Virtual for id to match frontend
+userSchema.virtual('id').get(function () {
+  return this._id.toHexString();
+});
+
+module.exports = mongoose.model('User', userSchema);

@@ -1,38 +1,20 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const mongoose = require('mongoose');
 
-const Ad = sequelize.define('Ad', {
-    id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
-    },
-    title: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    imageUrl: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    redirectUrl: {
-        type: DataTypes.STRING,
-        allowNull: true
-    },
-    isActive: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: true
-    },
-    startDate: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
-    },
-    endDate: {
-        type: DataTypes.DATE,
-        allowNull: true
-    }
+const adSchema = new mongoose.Schema({
+    imageUrl: { type: String, required: true },
+    active: { type: Boolean, default: true },
+    priority: { type: Number, default: 0 },
+    redirectType: { type: String },
+    redirectId: { type: String }
 }, {
-    timestamps: true
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 });
 
-module.exports = Ad;
+// Virtual for id
+adSchema.virtual('id').get(function () {
+    return this._id.toHexString();
+});
+
+module.exports = mongoose.model('Ad', adSchema);

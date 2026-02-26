@@ -12,7 +12,7 @@ const adminAuth = async (req, res, next) => {
     }
 
     // DB-level verification for extra security
-    const adminUser = await User.findByPk(req.user.id);
+    const adminUser = await User.findById(req.user.id);
     if (!adminUser || adminUser.role !== 'admin') {
       return res.status(403).json({ message: 'Invalid admin account' });
     }

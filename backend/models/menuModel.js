@@ -1,78 +1,35 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const mongoose = require('mongoose');
 
-const Menu = sequelize.define('Menu', {
-  id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true
-  },
-  name: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  description: {
-    type: DataTypes.TEXT,
-    allowNull: true
-  },
-  price: {
-    type: DataTypes.FLOAT,
-    allowNull: false
-  },
-  cost: {
-    type: DataTypes.FLOAT,
-    defaultValue: 0
-  },
-  category: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  imageUrl: {
-    type: DataTypes.STRING,
-    allowNull: true
-  },
-  inStock: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true
-  },
-  isSubscriptionItem: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false
-  },
-  quantity: {
-    type: DataTypes.INTEGER,
-    defaultValue: 100
-  },
-  lowStockThreshold: {
-    type: DataTypes.INTEGER,
-    defaultValue: 10
-  },
-  recipeName: {
-    type: DataTypes.STRING,
-    allowNull: true
-  },
-  preparationSteps: {
-    type: DataTypes.TEXT,
-    allowNull: true
-  },
-  station: {
-    type: DataTypes.ENUM('Sandwich', 'Shake', 'Egg', 'Fryer', 'Other'),
-    defaultValue: 'Other'
-  },
-  availability_isTimeBound: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false
-  },
-  availability_start: {
-    type: DataTypes.STRING,
-    defaultValue: '00:00'
-  },
-  availability_end: {
-    type: DataTypes.STRING,
-    defaultValue: '23:59'
-  }
-}, {
-  timestamps: true
+const recipeItemSchema = new mongoose.Schema({
+  ingredient: { type: mongoose.Schema.Types.ObjectId, ref: 'Ingredient', required: true },
+  quantityRequired: { type: Number, required: true }
 });
 
-module.exports = Menu;
+const menuSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  description: { type: String },
+  price: { type: Number, required: true },
+  cost: { type: Number, default: 0 },
+  category: { type: String, required: true },
+  imageUrl: { type: String },
+  inStock: { type: Boolean, default: true },
+  isSubscriptionItem: { type: Boolean, default: false },
+  quantity: { type: Number, default: 0 },
+  availability: {
+    isTimeBound: { type: Boolean, default: false },
+    start: { type: String, default: '00:00' },
+    end: { type: String, default: '23:59' }
+  },
+  recipe: [recipeItemSchema]
+}, {
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
+
+// Virtual for id
+menuSchema.virtual('id').get(function () {
+  return this._id.toHexString();
+});
+
+module.exports = mongoose.model('Menu', menuSchema);

@@ -1,47 +1,21 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const mongoose = require('mongoose');
 
-const Customer = sequelize.define('Customer', {
-  id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true
-  },
-  name: {
-    type: DataTypes.STRING,
-    allowNull: false
-  },
-  phone: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true
-  },
-  password: {
-    type: DataTypes.STRING,
-    allowNull: true
-  },
-  email: {
-    type: DataTypes.STRING,
-    allowNull: true
-  },
-  addresses: {
-    type: DataTypes.JSONB,
-    defaultValue: []
-  },
-  loyaltyPoints: {
-    type: DataTypes.INTEGER,
-    defaultValue: 0
-  },
-  totalSpent: {
-    type: DataTypes.FLOAT,
-    defaultValue: 0
-  },
-  visitCount: {
-    type: DataTypes.INTEGER,
-    defaultValue: 0
-  }
+const customerSchema = new mongoose.Schema({
+  name: { type: String },
+  phone: { type: String, required: true, unique: true },
+  email: { type: String },
+  loyaltyPoints: { type: Number, default: 0 },
+  totalSpent: { type: Number, default: 0 },
+  visitCount: { type: Number, default: 0 }
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
 });
 
-module.exports = Customer;
+// Virtual for id
+customerSchema.virtual('id').get(function () {
+  return this._id.toHexString();
+});
+
+module.exports = mongoose.model('Customer', customerSchema);

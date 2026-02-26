@@ -16,9 +16,7 @@ module.exports = async (req, res, next) => {
       return res.status(403).json({ message: 'Invalid token type' });
     }
 
-    req.user = await Customer.findByPk(decoded.id, {
-      attributes: ['id', 'phone', 'name']
-    });
+    req.user = await Customer.findById(decoded.id).select('phone name');
 
     if (!req.user) return res.status(401).json({ message: 'Customer not found' });
 

@@ -1,34 +1,19 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+const mongoose = require('mongoose');
 
-const SubscriptionUsage = sequelize.define('SubscriptionUsage', {
-    id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        primaryKey: true
-    },
-    subscriptionId: { // Foreign key to Subscription
-        type: DataTypes.UUID,
-        allowNull: false,
-        references: {
-            model: 'Subscriptions',
-            key: 'id'
-        }
-    },
-    date: {
-        type: DataTypes.DATEONLY, // Store YYYY-MM-DD
-        allowNull: false
-    },
-    claimed: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: true
-    },
-    claimedAt: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW
-    }
+const subscriptionUsageSchema = new mongoose.Schema({
+    customerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true },
+    subscriptionId: { type: mongoose.Schema.Types.ObjectId, ref: 'Subscription', required: true },
+    orderId: { type: mongoose.Schema.Types.ObjectId, ref: 'Order' },
+    usedAt: { type: Date, default: Date.now }
 }, {
-    timestamps: true
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 });
 
-module.exports = SubscriptionUsage;
+// Virtual for id
+subscriptionUsageSchema.virtual('id').get(function () {
+    return this._id.toHexString();
+});
+
+module.exports = mongoose.model('SubscriptionUsage', subscriptionUsageSchema);
