@@ -4,39 +4,47 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 const sequelize = process.env.DATABASE_URL
-    ? new Sequelize(process.env.DATABASE_URL, {
-        dialect: 'postgres',
-        logging: false,
-        dialectOptions: {
-            ssl: {
-                require: true,
-                rejectUnauthorized: false // Required for Supabase/Render connections
-            }
-        }
-    })
-    : new Sequelize(
-        process.env.DB_NAME || 'cafe_db',
-        process.env.DB_USER || 'postgres',
-        process.env.DB_PASS || 'postgres',
-        {
-            host: process.env.DB_HOST || 'localhost',
-            port: process.env.DB_PORT || 5432,
+    ? (() => {
+        console.log('Connecting via DATABASE_URL...');
+        return new Sequelize(process.env.DATABASE_URL, {
             dialect: 'postgres',
             logging: false,
             dialectOptions: {
-                ssl: process.env.DB_SSL === 'true' ? {
+                ssl: {
                     require: true,
                     rejectUnauthorized: false
-                } : false
-            },
-            pool: {
-                max: 5,
-                min: 0,
-                acquire: 30000,
-                idle: 10000
+                }
             }
-        }
-    );
+        });
+    })()
+    : (() => {
+        console.log('Connecting via individual DB parameters...');
+        console.log(`DB_HOST: ${process.env.DB_HOST || 'localhost'}`);
+        console.log(`DB_USER: ${process.env.DB_USER || 'postgres'}`);
+        return new Sequelize(
+            process.env.DB_NAME || 'cafe_db',
+            process.env.DB_USER || 'postgres',
+            process.env.DB_PASS || 'postgres',
+            {
+                host: process.env.DB_HOST || 'localhost',
+                port: process.env.DB_PORT || 5432,
+                dialect: 'postgres',
+                logging: false,
+                dialectOptions: {
+                    ssl: process.env.DB_SSL === 'true' ? {
+                        require: true,
+                        rejectUnauthorized: false
+                    } : false
+                },
+                pool: {
+                    max: 5,
+                    min: 0,
+                    acquire: 30000,
+                    idle: 10000
+                }
+            }
+        );
+    })();
 
 const connectDB = async () => {
     try {
