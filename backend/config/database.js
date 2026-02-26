@@ -3,9 +3,11 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
+const isProduction = process.env.NODE_ENV === 'production' || !!process.env.DATABASE_URL;
+
 const sequelize = process.env.DATABASE_URL
     ? (() => {
-        console.log('Connecting via DATABASE_URL...');
+        console.log('✅ DATABASE_URL detected. Connecting to Supabase/Remote DB...');
         return new Sequelize(process.env.DATABASE_URL, {
             dialect: 'postgres',
             logging: false,
@@ -18,9 +20,9 @@ const sequelize = process.env.DATABASE_URL
         });
     })()
     : (() => {
-        console.log('Connecting via individual DB parameters...');
-        console.log(`DB_HOST: ${process.env.DB_HOST || 'localhost'}`);
-        console.log(`DB_USER: ${process.env.DB_USER || 'postgres'}`);
+        console.warn('⚠️ DATABASE_URL not found! Falling back to individual parameters.');
+        console.log(`Targeting Host: ${process.env.DB_HOST || 'localhost'}`);
+        console.log(`Targeting User: ${process.env.DB_USER || 'postgres'}`);
         return new Sequelize(
             process.env.DB_NAME || 'cafe_db',
             process.env.DB_USER || 'postgres',
@@ -35,12 +37,6 @@ const sequelize = process.env.DATABASE_URL
                         require: true,
                         rejectUnauthorized: false
                     } : false
-                },
-                pool: {
-                    max: 5,
-                    min: 0,
-                    acquire: 30000,
-                    idle: 10000
                 }
             }
         );
