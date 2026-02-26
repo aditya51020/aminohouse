@@ -1,10 +1,30 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
-const couponUsageSchema = new mongoose.Schema({
-    coupon: { type: mongoose.Schema.Types.ObjectId, ref: 'Coupon', required: true },
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    order: { type: mongoose.Schema.Types.ObjectId, ref: 'Order', required: true },
-    usedAt: { type: Date, default: Date.now }
+const CouponUsage = sequelize.define('CouponUsage', {
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true
+    },
+    couponId: {
+        type: DataTypes.UUID,
+        allowNull: false
+    },
+    customerId: {
+        type: DataTypes.UUID,
+        allowNull: false
+    },
+    orderId: {
+        type: DataTypes.UUID,
+        allowNull: false
+    },
+    usedAt: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW
+    }
+}, {
+    timestamps: true
 });
 
-module.exports = mongoose.model('CouponUsage', couponUsageSchema);
+module.exports = CouponUsage;

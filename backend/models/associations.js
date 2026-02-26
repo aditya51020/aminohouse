@@ -10,6 +10,7 @@ const RecipeItem = require('./RecipeItem'); // Junction Table
 const Setting = require('./settingModel');
 const Ad = require('./adModel');
 const Coupon = require('./couponModel');
+const CouponUsage = require('./couponUsageModel');
 const Subscription = require('./subscriptionModel');
 const SubscriptionUsage = require('./subscriptionUsageModel');
 
@@ -32,6 +33,18 @@ Order.belongsTo(Customer, { foreignKey: 'customerId' });
 Subscription.hasMany(SubscriptionUsage, { foreignKey: 'subscriptionId' });
 SubscriptionUsage.belongsTo(Subscription, { foreignKey: 'subscriptionId' });
 
+// Coupon <-> CouponUsage
+Coupon.hasMany(CouponUsage, { foreignKey: 'couponId' });
+CouponUsage.belongsTo(Coupon, { foreignKey: 'couponId' });
+
+// Customer <-> CouponUsage
+Customer.hasMany(CouponUsage, { foreignKey: 'customerId' });
+CouponUsage.belongsTo(Customer, { foreignKey: 'customerId' });
+
+// Order <-> CouponUsage
+Order.hasOne(CouponUsage, { foreignKey: 'orderId' });
+CouponUsage.belongsTo(Order, { foreignKey: 'orderId' });
+
 module.exports = {
     User,
     Admin,
@@ -45,6 +58,7 @@ module.exports = {
     Setting,
     Ad,
     Coupon,
+    CouponUsage,
     Subscription,
     SubscriptionUsage
 };
