@@ -14,22 +14,46 @@ const sequelize = (() => {
     const rawUrl = process.env.DATABASE_URL || process.env.DB_URL;
 
     if (rawUrl) {
-        const dbUrl = rawUrl.trim();
-        console.log('✅ Database URL detected. Connecting to Remote DB...');
-        // Mask password in logs
-        const masked = dbUrl.replace(/:([^@/]+)@/, ':****@');
-        console.log(`Connection string (masked): ${masked}`);
+        try {
+            const dbUrl = rawUrl.trim();
+            console.log('✅ DATABASE_URL detected. Parsing connection parameters...');
 
-        return new Sequelize(dbUrl, {
-            dialect: 'postgres',
-            logging: false,
-            dialectOptions: {
-                ssl: {
-                    require: true,
-                    rejectUnauthorized: false
+            // Native URL parsing is more robust for complex passwords/usernames
+            const parsed = new URL(dbUrl);
+            const dbName = parsed.pathname.split('/')[1];
+            const dbUser = decodeURIComponent(parsed.username);
+            const dbPass = decodeURIComponent(parsed.password);
+            const dbHost = parsed.hostname;
+            const dbPort = parsed.port || 5432;
+
+            console.log(`Connection Params: Host=${dbHost}, User=${dbUser}, DB=${dbName}, Port=${dbPort}`);
+
+            return new Sequelize(dbName, dbUser, dbPass, {
+                host: dbHost,
+                port: dbPort,
+                dialect: 'postgres',
+                logging: false,
+                dialectOptions: {
+                    ssl: {
+                        require: true,
+                        rejectUnauthorized: false
+                    }
+                },
+                pool: {
+                    max: 5,
+                    min: 0,
+                    acquire: 30000,
+                    idle: 10000
                 }
-            }
-        });
+            });
+        } catch (err) {
+            console.error('❌ Failed to parse DATABASE_URL:', err.message);
+            // Fallback to direct string if URL parsing fails
+            return new Sequelize(rawUrl, {
+                dialect: 'postgres',
+                dialectOptions: { ssl: { require: true, rejectUnauthorized: false } }
+            });
+        }
     }
 
     console.warn('⚠️ No Database URL found! Falling back to individual parameters.');
