@@ -640,7 +640,8 @@ const Menu = () => {
             </div>
             <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
               {combos.map(combo => {
-                const savings = combo.originalPrice - combo.comboPrice;
+                const originalPrice = (combo.items || []).reduce((sum, i) => sum + Number(i.price || 0), 0);
+                const savings = originalPrice - combo.price;
                 return (
                   <div
                     key={combo.id}
@@ -666,8 +667,8 @@ const Menu = () => {
                         {(combo.items || []).map(i => i.name).join(' + ')}
                       </p>
                       <div className="flex items-center gap-2 mt-2">
-                        <span className="text-xs line-through text-gray-400">₹{combo.originalPrice}</span>
-                        <span className="font-black text-gray-900">₹{combo.comboPrice}</span>
+                        <span className="text-xs line-through text-gray-400">₹{originalPrice}</span>
+                        <span className="font-black text-gray-900">₹{combo.price}</span>
                       </div>
                       <button
                         onClick={() => {
@@ -675,8 +676,8 @@ const Menu = () => {
                           const comboCartItem = {
                             _id: `combo-${combo.id}`,
                             name: combo.name,
-                            price: combo.comboPrice,
-                            totalPrice: combo.comboPrice,
+                            price: combo.price,
+                            totalPrice: combo.price,
                             quantity: 1,
                             imageUrl: combo.imageUrl || (combo.items?.[0]?.imageUrl) || '',
                             customizations: null,
