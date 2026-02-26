@@ -5,9 +5,14 @@ dotenv.config();
 
 const isProduction = process.env.NODE_ENV === 'production' || !!process.env.DATABASE_URL;
 
+// Debug: Log available keys to verify Render environment injection
+console.log('--- Environment Check ---');
+console.log('Available Env Keys:', Object.keys(process.env).filter(k => k.includes('DB') || k.includes('URL') || k.includes('PORT') || k.includes('SECRET')));
+console.log('--- --- --- --- --- ---');
+
 const sequelize = process.env.DATABASE_URL
     ? (() => {
-        console.log('✅ DATABASE_URL detected. Connecting to Supabase/Remote DB...');
+        console.log('✅ DATABASE_URL detected. Connecting to Supabase...');
         return new Sequelize(process.env.DATABASE_URL, {
             dialect: 'postgres',
             logging: false,
@@ -20,9 +25,16 @@ const sequelize = process.env.DATABASE_URL
         });
     })()
     : (() => {
-        console.warn('⚠️ DATABASE_URL not found! Falling back to individual parameters.');
-        console.log(`Targeting Host: ${process.env.DB_HOST || 'localhost'}`);
-        console.log(`Targeting User: ${process.env.DB_USER || 'postgres'}`);
+        console.warn('⚠️ DATABASE_URL NOT FOUND!');
+        const host = process.env.DB_HOST;
+        const user = process.env.DB_USER;
+
+        if (!host || !user) {
+            console.error('❌ CRITICAL: No database configuration found. Please set DATABASE_URL in Render settings.');
+        }
+
+        console.log(`Attempting connection to Host: ${host || 'localhost'} as User: ${user || 'postgres'}`);
+
         return new Sequelize(
             process.env.DB_NAME || 'cafe_db',
             process.env.DB_USER || 'postgres',
