@@ -1028,7 +1028,7 @@ const Menu = () => {
                 </div>
               </div>
               <button
-                onClick={() => setCurrentStep('payment')}
+                onClick={() => setCurrentStep('checkout')}
                 className="w-full py-4 rounded-xl font-bold text-lg text-white bg-black hover:bg-gray-800 transition-all"
               >
                 Proceed to Pay — ₹{finalTotal}

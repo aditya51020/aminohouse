@@ -24,7 +24,16 @@ const createOrder = async (req, res) => {
     if (req.user?.id) {
       customer = await Customer.findById(req.user.id);
     } else if (phone) {
-      guestDetails = { name: guestName || 'Guest', phone };
+      const sanitizedPhone = phone || '0000000000';
+      customer = await Customer.findOne({ phone: sanitizedPhone });
+      if (!customer) {
+        customer = await Customer.create({ name: guestName || 'Guest', phone: sanitizedPhone });
+      } else if (!customer.name && guestName && guestName !== 'Guest') {
+        customer.name = guestName;
+        await customer.save();
+      }
+      // Keep guestDetails for backwards compatibility just in case
+      guestDetails = { name: guestName || 'Guest', phone: sanitizedPhone };
     }
 
     // DUPLICATE ORDER PROTECTION
