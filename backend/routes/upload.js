@@ -5,6 +5,7 @@ const path = require('path');
 const auth = require('../middleware/auth');
 const cloudinary = require('cloudinary').v2;
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const sharp = require('sharp');
 
 // Configure Cloudinary (will only work if ENV vars are set)
 if (process.env.CLOUDINARY_CLOUD_NAME) {
@@ -31,13 +32,8 @@ if (useCloudinary) {
     }
   });
 } else {
-  // Fallback to Ephemeral Local Disk Storage (Current buggy behavior on Render)
-  storage = multer.diskStorage({
-    destination: './Uploads/',
-    filename: (req, file, cb) => {
-      cb(null, Date.now() + path.extname(file.originalname));
-    },
-  });
+  // Permanent Base64 Memory Storage Fallback (Fixes Render Ephemeral Disks without Cloudinary)
+  storage = multer.memoryStorage();
 }
 
 const upload = multer({
@@ -55,9 +51,8 @@ const upload = multer({
   },
 });
 
-router.post('/', auth, upload.single('image'), (req, res) => {
+router.post('/', auth, upload.single('image'), async (req, res) => {
   try {
-    console.log('Uploaded file:', req.file); // Log file details
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
     }
@@ -68,9 +63,14 @@ router.post('/', auth, upload.single('image'), (req, res) => {
       // Cloudinary returns the secure URL in req.file.path
       imageUrl = req.file.path;
     } else {
-      // Local Disk returns local filename
-      const baseUrl = process.env.BACKEND_URL || `${req.protocol}://${req.get('host')}`;
-      imageUrl = `${baseUrl}/uploads/${req.file.filename}`;
+      // Base64 Compression: Resize image to max 500x500 and encode as Data URI
+      const buffer = await sharp(req.file.buffer)
+        .resize(500, 500, { fit: 'inside', withoutEnlargement: true })
+        .jpeg({ quality: 80 })
+        .toBuffer();
+
+      const b64 = buffer.toString('base64');
+      imageUrl = `data:image/jpeg;base64,${b64}`;
     }
 
     res.json({ imageUrl });
